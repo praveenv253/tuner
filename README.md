@@ -10,4 +10,11 @@ Bugs
 ----
 1. You need to know the frequency of the note you are tuning to.
 2. Very often ends up catching the harmonic instead of the note being tuned.
-3. Needs a better interface.
+3. Frequency does not remain constant (though this might be a fundamental
+   limitation of the instrument).
+
+Features to add
+---------------
+1. A better interface.
+2. More fine-grained a measure of frequency.
+3. Tuning along with a reference frequency.
