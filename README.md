@@ -8,6 +8,6 @@ I'm currently using this to tune my violin :)
 
 Bugs
 ----
--# You need to know the frequency of the note you are tuning to.
--# Very often ends up catching the harmonic instead of the note being tuned.
--# Needs a better interface.
+1. You need to know the frequency of the note you are tuning to.
+2. Very often ends up catching the harmonic instead of the note being tuned.
+3. Needs a better interface.
