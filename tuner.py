@@ -1,6 +1,5 @@
-#!/usr/bin/env python
-
-from sys import byteorder
+import sys
+from select import select
 from array import array
 
 import pyaudio
@@ -11,48 +10,80 @@ FORMAT = pyaudio.paInt16
 CHUNK_SIZE = 128            # Depends on human persistence of hearing
 RATE = 2048                 # Depends on desired frequencies to capture
 RESOLUTION = 0.5            # Desired resolution in Hz
-THRESHOLD = 20000
-KAISER_BETA = 7.5
+THRESHOLD = 20000           # Minimum amplitude of the largest frequency spike
+KAISER_BETA = 7.5           # The `beta' parameter of the Kaiser window
 
-if __name__ == '__main__':
+def tune(plotfreq=False, plottime=False):
     # Set up the Kaiser window
     n = np.arange(CHUNK_SIZE) + 0.5  # Assuming CHUNK_SIZE is even
     x = (n - CHUNK_SIZE / 2) / (CHUNK_SIZE / 2)
     window = np.i0(KAISER_BETA * np.sqrt(1 - x ** 2)) / np.i0(KAISER_BETA)
 
+    # Get audio data
     p = pyaudio.PyAudio()
     stream = p.open(format=FORMAT, channels=1, rate=RATE, input=True,
                     output=True, frames_per_buffer=CHUNK_SIZE)
 
+    if plotfreq or plottime:
+        # Set up plotting paraphernalia
+        plt.ion()
+        if plottime:
+            figtime = plt.figure()
+            axtime = figtime.gca()
+        if plotfreq:
+            figfreq = plt.figure()
+            axfreq = figfreq.gca()
+
+    print 'Press return to stop...'
+
     i = 0
-    #plt.ion()
-    #plt.figure(0)
     while 1:
-        plt.clf()
         i += 1
 
-        # Little endian, signed short
+        # Check if something has been input. If so, exit.
+        if sys.stdin in select([sys.stdin, ], [], [], 0)[0]:
+            # Absorb the input and break
+            sys.stdin.readline()
+            break
+
+        # Acquire sound data
         snd_data = array('h', stream.read(CHUNK_SIZE))
-        if byteorder == 'big':
+        signal = np.array(snd_data)
+        if sys.byteorder == 'big':
             snd_data.byteswap()
 
-        signal = np.array(snd_data)
-        signal *= window
-        #signal_repeated = np.zeros(1,)
-        #for i in range(int(np.ceil(float(RATE) / CHUNK_SIZE))):
-        #    signal_repeated = np.hstack((signal_repeated, signal))
+        if plottime:
+            if i > 1:
+                axtime.lines.remove(timeline)
+            [timeline, ] = axtime.plot(signal, 'b-')
+            figtime.canvas.draw()
 
+        # Apply a Kaiser window on the signal before taking the FFT. This
+        # makes the signal look better if it is periodic. Derivatives at the
+        # edges of the signal match better, which means that the frequency
+        # domain will have fewer side-lobes. However, it does cause each spike
+        # to grow a bit broader.
+        # One can change the value of beta to tradeoff between side-lobe height
+        # and main lobe width.
+        signal *= window
         spectrum = np.fft.rfft(signal, int(RATE / RESOLUTION))
         peak = np.argmax(abs(spectrum))         # peak directly gives the
                                                 # desired frequency
-        if spectrum[peak] < THRESHOLD:
-            continue
+        # Threshold on the maximum peak present in the signal (meaning we
+        # expect the signal to be approximately unimodal)
+        if spectrum[peak] > THRESHOLD:
+            # Put a band-pass filter in place to look at only those frequencies
+            # we want. The desired peak is the harmonic located in the
+            # frequency region of interest.
+            desired_peak = np.argmax(abs(spectrum[90:550]))
+            print desired_peak
 
-        print peak
-        #plt.plot(abs(spectrum))
-        #plt.draw()
+            if plotfreq:
+                if i > 1:
+                    axfreq.lines.remove(freqline)
+                [freqline, ] = axfreq.plot(abs(spectrum), 'b-')
+                figfreq.canvas.draw()
 
     stream.stop_stream()
     stream.close()
     p.terminate()
-
