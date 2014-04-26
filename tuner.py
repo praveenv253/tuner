@@ -79,8 +79,10 @@ def tune(plotfreq=False, plottime=False):
             print desired_peak
 
             if plotfreq:
-                if i > 1:
+                try:
                     axfreq.lines.remove(freqline)
+                except UnboundLocalError:
+                    pass
                 [freqline, ] = axfreq.plot(abs(spectrum), 'b-')
                 figfreq.canvas.draw()
 
