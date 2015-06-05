@@ -3,4 +3,4 @@
 from tuner import tune
 
 if __name__ == '__main__':
-    tune()
+    tune(plotfreq=True, input_device_index=None)

@@ -13,7 +13,7 @@ RESOLUTION = 0.5            # Desired resolution in Hz
 THRESHOLD = 20000           # Minimum amplitude of the largest frequency spike
 KAISER_BETA = 7.5           # The `beta' parameter of the Kaiser window
 
-def tune(plotfreq=False, plottime=False):
+def tune(plotfreq=False, plottime=False, input_device_index=None):
     # Set up the Kaiser window
     n = np.arange(CHUNK_SIZE) + 0.5  # Assuming CHUNK_SIZE is even
     x = (n - CHUNK_SIZE / 2) / (CHUNK_SIZE / 2)
@@ -21,8 +21,11 @@ def tune(plotfreq=False, plottime=False):
 
     # Get audio data
     p = pyaudio.PyAudio()
+    #device_info = p.get_device_info_by_index(input_device_index)
+    #print(device_info)
     stream = p.open(format=FORMAT, channels=1, rate=RATE, input=True,
-                    output=True, frames_per_buffer=CHUNK_SIZE)
+                    input_device_index=input_device_index,
+                    frames_per_buffer=CHUNK_SIZE)
 
     if plotfreq or plottime:
         # Set up plotting paraphernalia
@@ -49,8 +52,8 @@ def tune(plotfreq=False, plottime=False):
         # Acquire sound data
         snd_data = array('h', stream.read(CHUNK_SIZE))
         signal = np.array(snd_data)
-        if sys.byteorder == 'big':
-            snd_data.byteswap()
+        #if sys.byteorder == 'big':
+            #snd_data.byteswap()
 
         if plottime:
             if i > 1:
