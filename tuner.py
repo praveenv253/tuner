@@ -1,3 +1,7 @@
+#!/usr/bin/env python3
+
+from __future__ import print_function, division
+
 import sys
 from select import select
 from array import array
@@ -6,12 +10,14 @@ import pyaudio
 import numpy as np
 import matplotlib.pyplot as plt
 
+
 FORMAT = pyaudio.paInt16
 CHUNK_SIZE = 128            # Depends on human persistence of hearing
 RATE = 2048                 # Depends on desired frequencies to capture
 RESOLUTION = 0.5            # Desired resolution in Hz
 THRESHOLD = 20000           # Minimum amplitude of the largest frequency spike
 KAISER_BETA = 7.5           # The `beta' parameter of the Kaiser window
+
 
 def tune(plotfreq=False, plottime=False, input_device_index=None):
     # Set up the Kaiser window
@@ -29,7 +35,7 @@ def tune(plotfreq=False, plottime=False, input_device_index=None):
 
     if plotfreq or plottime:
         # Set up plotting paraphernalia
-        plt.ion()
+        plt.interactive(True)
         if plottime:
             figtime = plt.figure()
             axtime = figtime.gca()
@@ -37,7 +43,7 @@ def tune(plotfreq=False, plottime=False, input_device_index=None):
             figfreq = plt.figure()
             axfreq = figfreq.gca()
 
-    print 'Press return to stop...'
+    print('Press return to stop...')
 
     i = 0
     while 1:
@@ -51,7 +57,7 @@ def tune(plotfreq=False, plottime=False, input_device_index=None):
 
         # Acquire sound data
         snd_data = array('h', stream.read(CHUNK_SIZE))
-        signal = np.array(snd_data)
+        signal = np.array(snd_data, dtype=float)
         #if sys.byteorder == 'big':
             #snd_data.byteswap()
 
@@ -79,7 +85,7 @@ def tune(plotfreq=False, plottime=False, input_device_index=None):
             # we want. The desired peak is the harmonic located in the
             # frequency region of interest.
             desired_peak = np.argmax(abs(spectrum[90:550]))
-            print desired_peak
+            print(desired_peak)
 
             if plotfreq:
                 try:
